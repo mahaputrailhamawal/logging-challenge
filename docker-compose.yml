@@ -9,5 +9,14 @@ services:
       - ./scripts/grafana/dashboards:/etc/grafana/demo-dashboards
       - grafana_data:/var/lib/grafana
 
+  fluentbit:
+    image: fluent/fluent-bit:2.1.10
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./scripts/fluentbit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - ./logs:/app/logs
+      
 volumes:
   grafana_data:
