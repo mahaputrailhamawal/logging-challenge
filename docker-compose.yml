@@ -9,6 +9,14 @@ services:
       - ./scripts/grafana/dashboards:/etc/grafana/demo-dashboards
       - grafana_data:/var/lib/grafana
 
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./scripts/loki:/etc/loki
+    command: -config.file=/etc/loki/config.yml
+
   fluentbit:
     image: fluent/fluent-bit:2.1.10
     ports:
@@ -27,6 +35,6 @@ services:
       options:
         tag: nginx
         fluentd-sub-second-precision: 'true'
-        
+
 volumes:
   grafana_data:
