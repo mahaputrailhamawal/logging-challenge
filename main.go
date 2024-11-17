@@ -46,6 +46,8 @@ func main() {
 
 	multiWriters := zerolog.MultiLevelWriter(os.Stdout, lf)
 	log.Logger = zerolog.New(multiWriters).With().Timestamp().Logger()
+
+	log.Info().Msg("starting server")
 	// end: set up any of your logger configuration here
 
 	server := &http.Server{
@@ -100,7 +102,7 @@ func greeting(ctx context.Context, name string) (string, error) {
 	log.Debug().Str("func", "greeting").Str("name", name).Msg("greeting started")
 
 	if len(name) < 5 {
-		log.Error().Msgf("name is too short: %s", name)
+		log.Warn().Msgf("name is too short: %s", name)
 		return fmt.Sprintf("Hello %s! Your name is to short\n", name), nil
 	}
 
