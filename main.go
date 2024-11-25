@@ -51,7 +51,7 @@ func main() {
 	// end: set up any of your logger configuration here
 
 	server := &http.Server{
-		Addr:    ":8081",
+		Addr:    ":8080",
 		Handler: r,
 	}
 
