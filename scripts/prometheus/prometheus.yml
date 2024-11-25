@@ -7,4 +7,4 @@ scrape_configs:
   - job_name: my-http-service
     scrape_interval: 3s
     static_configs:
-      - targets: ['http-service:8081']
+      - targets: ['http-service:8080']
