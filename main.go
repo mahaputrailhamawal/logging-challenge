@@ -12,6 +12,17 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+var (
+	reqCountProcessed = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "http_request_count",
+		Help: "The total number of processed by handler",
+	})
 )
 
 func main() {
@@ -28,6 +39,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handler)
+	r.Handle("/metrics", promhttp.Handler())
 
 	// start: set up any of your logger configuration here if necessary
 	r.Use(middleware)
@@ -81,6 +93,7 @@ func middleware(next http.Handler) http.Handler {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	reqCountProcessed.Inc()
 	ctx := r.Context()
 
 	log := log.Ctx(ctx).With().Str("func", "handler").Logger()
