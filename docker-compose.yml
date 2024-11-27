@@ -47,6 +47,16 @@ services:
       options:
         tag: nginx
         fluentd-sub-second-precision: 'true'
+  
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest  
+    command:
+      - '--path.rootfs=/host'    
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - 9100:9100
 
 volumes:
   grafana_data:
