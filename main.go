@@ -39,12 +39,12 @@ func main() {
 	)
 
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to initialize resource")
+		log.Fatal().Msg("failed to initialize resource")
 	}
 
 	exporter, err := prometheus.New()
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to initialize prometheus exporter")
+		log.Fatal().Msg("failed to initialize prometheus exporter")
 	}
 
 	meterProvider := metric.NewMeterProvider(
@@ -55,12 +55,11 @@ func main() {
 	otel.SetMeterProvider(meterProvider)
 
 	r := mux.NewRouter()
+	r.Use(middleware)
 	r.HandleFunc("/", handler)
 	r.Handle("/metrics", promhttp.Handler())
 
 	// start: set up any of your logger configuration here if necessary
-	r.Use(middleware)
-
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	lf, err := os.OpenFile(
