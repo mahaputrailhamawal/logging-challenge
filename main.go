@@ -13,16 +13,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-)
-
-var (
-	reqCountProcessed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "http_request_count",
-		Help: "The total number of processed by handler",
-	})
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
 
 func main() {
@@ -36,6 +32,27 @@ func main() {
 		log.Warn().Msgf("system call:%+v", oscall)
 		cancel()
 	}()
+
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("logging-challange")),
+	)
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to initialize resource")
+	}
+
+	exporter, err := prometheus.New()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to initialize prometheus exporter")
+	}
+
+	meterProvider := metric.NewMeterProvider(
+		metric.WithResource(res),
+		metric.WithReader(exporter),
+	)
+
+	otel.SetMeterProvider(meterProvider)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handler)
