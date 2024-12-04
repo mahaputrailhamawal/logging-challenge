@@ -110,7 +110,6 @@ func middleware(next http.Handler) http.Handler {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	reqCountProcessed.Inc()
 	ctx := r.Context()
 
 	log := log.Ctx(ctx).With().Str("func", "handler").Logger()
