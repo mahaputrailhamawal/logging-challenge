@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
@@ -74,8 +75,8 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Use(middleware)
-	r.HandleFunc("/", handler)
-	r.Handle("/metrics", promhttp.Handler())
+	r.Handle("/", otelhttp.WithRouteTag("/", http.HandlerFunc(handler)))
+	r.Handle("/metrics", otelhttp.WithRouteTag("/metrics", promhttp.Handler()))
 
 	// start: set up any of your logger configuration here if necessary
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -98,7 +99,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: r,
+		Handler: otelhttp.NewHandler(r, "/"),
 	}
 
 	go func() {
