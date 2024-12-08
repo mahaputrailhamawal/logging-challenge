@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -15,11 +16,16 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
+
+var meter otelmetric.Meter
+var reqHistogram otelmetric.Float64Histogram
 
 func main() {
 	ctx := context.Background()
@@ -53,6 +59,18 @@ func main() {
 	)
 
 	otel.SetMeterProvider(meterProvider)
+
+	meter = otel.Meter("logging-challange")
+
+	reqHistogram, err = meter.Float64Histogram("http_request_duration_milliseconds",
+		otelmetric.WithUnit("milliseconds"),
+		otelmetric.WithDescription("Service latency"),
+		otelmetric.WithExplicitBucketBoundaries([]float64{10, 50, 100, 200, 500, 1000}...),
+	)
+
+	if err != nil {
+		log.Fatal().Msg("failed to create measurement meter")
+	}
 
 	r := mux.NewRouter()
 	r.Use(middleware)
@@ -104,7 +122,19 @@ func middleware(next http.Handler) http.Handler {
 			Logger()
 
 		ctx := log.WithContext(r.Context())
+
+		// calculate time elapsed
+		start := time.Now()
 		next.ServeHTTP(w, r.WithContext(ctx))
+		elapsed := time.Since(start)
+		elapsed_ms := float64(elapsed.Nanoseconds()) / 1000000
+
+		log.Info().Float64("elapsed_ms", elapsed_ms).Msg("request processed")
+		reqHistogram.Record(ctx, elapsed_ms,
+			otelmetric.WithAttributes(
+				attribute.String("url", r.URL.String()),
+			),
+		)
 	})
 }
 
